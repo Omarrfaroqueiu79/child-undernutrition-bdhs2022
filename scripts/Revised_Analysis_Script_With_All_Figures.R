@@ -768,35 +768,59 @@ ggsave(paste0(output_dir, "Figure_1_Trend_Undernutrition_BDHS_LinePlot_n.pdf"), 
 #------------------------------------------------------------------------------
 # Figure 2: STROBE Participant Selection Flowchart (N = 4,087)
 #------------------------------------------------------------------------------
-cat("  -> Generating Figure 2: STROBE Sample Selection Flowchart...\n")
+cat("  -> Generating Figure 2: STROBE Sample Selection Flowchart...
+")
 
 p_flow <- ggplot() +
-  annotate("rect", xmin = 0.2, xmax = 0.8, ymin = 0.88, ymax = 0.98, fill = "white", color = "black", linewidth = 0.8) +
-  annotate("text", x = 0.5, y = 0.93, label = "675 Enumeration Areas (EAs) Selected\n(Two-stage stratified cluster sampling frame)", size = 4.2, fontface = "bold", hjust = 0.5) +
-  annotate("segment", x = 0.5, xend = 0.5, y = 0.88, yend = 0.83, arrow = arrow(length = unit(0.25, "cm"), type = "closed"), linewidth = 0.8) +
-  annotate("rect", xmin = 0.2, xmax = 0.8, ymin = 0.73, ymax = 0.83, fill = "white", color = "black", linewidth = 0.8) +
-  annotate("text", x = 0.5, y = 0.78, label = "674 EAs Successfully Surveyed\n(237 Urban EAs and 437 Rural EAs)\n*1 rural EA omitted due to flooding", size = 4.0, hjust = 0.5) +
-  annotate("segment", x = 0.5, xend = 0.5, y = 0.73, yend = 0.68, arrow = arrow(length = unit(0.25, "cm"), type = "closed"), linewidth = 0.8) +
-  annotate("rect", xmin = 0.2, xmax = 0.8, ymin = 0.58, ymax = 0.68, fill = "white", color = "black", linewidth = 0.8) +
-  annotate("text", x = 0.5, y = 0.63, label = "30,330 Households Sampled (25,481 Interviewed)\n30,078 Ever-Married Women Aged 15–49 Years Interviewed", size = 4.0, hjust = 0.5) +
-  annotate("segment", x = 0.5, xend = 0.5, y = 0.58, yend = 0.53, arrow = arrow(length = unit(0.25, "cm"), type = "closed"), linewidth = 0.8) +
-  annotate("rect", xmin = 0.2, xmax = 0.8, ymin = 0.43, ymax = 0.53, fill = "white", color = "black", linewidth = 0.8) +
-  annotate("text", x = 0.5, y = 0.48, label = "8,784 Under-Five Children Born\n(Live births in the 5 years preceding the survey)", size = 4.2, fontface = "bold", hjust = 0.5) +
-  annotate("segment", x = 0.5, xend = 0.5, y = 0.43, yend = 0.35, arrow = arrow(length = unit(0.25, "cm"), type = "closed"), linewidth = 0.8) +
-  annotate("segment", x = 0.5, xend = 0.85, y = 0.39, linewidth = 0.8) +
-  annotate("segment", x = 0.85, xend = 0.85, y = 0.39, yend = 0.35, arrow = arrow(length = unit(0.25, "cm"), type = "closed"), linewidth = 0.8) +
-  annotate("rect", xmin = 0.65, xmax = 0.98, ymin = 0.23, ymax = 0.35, fill = "#f9f9f9", color = "black", linetype = "dashed", linewidth = 0.8) +
-  annotate("text", x = 0.815, y = 0.29, label = "Excluded (n = 4,697):\n• Deceased children: n = 276\n• Missing/not measured anthropometry\n  (non-subsampled/absent): n = 4,421\n• Flagged/implausible Z-scores: n = 0", size = 3.6, hjust = 0.5) +
-  annotate("rect", xmin = 0.15, xmax = 0.60, ymin = 0.23, ymax = 0.35, fill = "white", color = "black", linewidth = 0.9) +
-  annotate("text", x = 0.375, y = 0.29, label = "Final Analytical Sample: N = 4,087\nChildren aged 0–59 months with complete\nanthropometric & covariate information\n(Nested in 3,474 households across 670 clusters)", size = 3.9, fontface = "bold", hjust = 0.5) +
-  annotate("segment", x = 0.375, xend = 0.375, y = 0.23, yend = 0.17, arrow = arrow(length = unit(0.25, "cm"), type = "closed"), linewidth = 0.8) +
-  annotate("rect", xmin = 0.05, xmax = 0.95, ymin = 0.03, ymax = 0.17, fill = "#f4f6f9", color = "black", linewidth = 0.8) +
-  annotate("text", x = 0.5, y = 0.10, label = "Anthropometric Nutritional Outcomes Evaluated:\n• Stunting: 966 Stunted (23.64%), 3,121 Normal (76.36%)\n• Wasting: 487 Wasted (11.92%), 3,600 Normal (88.08%)\n• Underweight: 928 Underweight (22.71%), 3,159 Normal (77.29%)", size = 4.0, hjust = 0.5) +
+  # Box 1: EAs Selected
+  annotate("rect", xmin = 0.2, xmax = 0.8, ymin = 0.86, ymax = 0.98, fill = "white", color = "black", linewidth = 0.8) +
+  annotate("text", x = 0.5, y = 0.92, label = "675 Enumeration Areas (EAs) Selected
+(Two-stage stratified cluster sampling frame)", size = 4.2, fontface = "bold", hjust = 0.5) +
+  annotate("segment", x = 0.5, xend = 0.5, y = 0.86, yend = 0.80, arrow = arrow(length = unit(0.25, "cm"), type = "closed"), linewidth = 0.8) +
+  
+  # Box 2: EAs Surveyed
+  annotate("rect", xmin = 0.2, xmax = 0.8, ymin = 0.68, ymax = 0.80, fill = "white", color = "black", linewidth = 0.8) +
+  annotate("text", x = 0.5, y = 0.74, label = "674 EAs Successfully Surveyed
+(237 Urban EAs and 437 Rural EAs)
+*1 rural EA omitted due to flooding", size = 4.0, hjust = 0.5) +
+  annotate("segment", x = 0.5, xend = 0.5, y = 0.68, yend = 0.62, arrow = arrow(length = unit(0.25, "cm"), type = "closed"), linewidth = 0.8) +
+  
+  # Box 3: Households and Women Interviewed
+  annotate("rect", xmin = 0.2, xmax = 0.8, ymin = 0.50, ymax = 0.62, fill = "white", color = "black", linewidth = 0.8) +
+  annotate("text", x = 0.5, y = 0.56, label = "30,330 Households Sampled (25,481 Interviewed)
+30,078 Ever-Married Women Aged 15–49 Years Interviewed", size = 4.0, hjust = 0.5) +
+  annotate("segment", x = 0.5, xend = 0.5, y = 0.50, yend = 0.44, arrow = arrow(length = unit(0.25, "cm"), type = "closed"), linewidth = 0.8) +
+  
+  # Box 4: Under-Five Children Born
+  annotate("rect", xmin = 0.2, xmax = 0.8, ymin = 0.32, ymax = 0.44, fill = "white", color = "black", linewidth = 0.8) +
+  annotate("text", x = 0.5, y = 0.38, label = "8,784 Under-Five Children Born
+(Live births in the 5 years preceding the survey)", size = 4.2, fontface = "bold", hjust = 0.5) +
+  
+  # Flow to Analytical Sample and Exclusions
+  annotate("segment", x = 0.5, xend = 0.5, y = 0.32, yend = 0.22, arrow = arrow(length = unit(0.25, "cm"), type = "closed"), linewidth = 0.8) +
+  annotate("segment", x = 0.5, xend = 0.85, y = 0.27, linewidth = 0.8) +
+  annotate("segment", x = 0.85, xend = 0.85, y = 0.27, yend = 0.22, arrow = arrow(length = unit(0.25, "cm"), type = "closed"), linewidth = 0.8) +
+  
+  # Excluded Box
+  annotate("rect", xmin = 0.65, xmax = 0.98, ymin = 0.08, ymax = 0.22, fill = "#f9f9f9", color = "black", linetype = "dashed", linewidth = 0.8) +
+  annotate("text", x = 0.815, y = 0.15, label = "Excluded (n = 4,697):
+• Deceased children: n = 276
+• Missing/not measured anthropometry
+  (non-subsampled/absent): n = 4,421
+• Flagged/implausible Z-scores: n = 0", size = 3.6, hjust = 0.5) +
+  
+  # Final Analytical Sample Box (clean termination per STROBE guidelines)
+  annotate("rect", xmin = 0.15, xmax = 0.60, ymin = 0.08, ymax = 0.22, fill = "#eef4fa", color = "#1b4f72", linewidth = 1.0) +
+  annotate("text", x = 0.375, y = 0.15, label = "Final Analytical Sample: N = 4,087
+Children aged 0–59 months with complete
+anthropometric & covariate information
+(Nested in 3,474 households across 670 clusters)", size = 3.9, fontface = "bold", hjust = 0.5, color = "#0b2545") +
+  
   theme_void() +
-  coord_cartesian(xlim = c(0.02, 1.0), ylim = c(0.01, 1.0))
+  coord_cartesian(xlim = c(0.02, 1.0), ylim = c(0.05, 1.0))
 
-ggsave(paste0(output_dir, "Figure_2_Sample_Selection_Flowchart.png"), p_flow, width = 9, height = 11, dpi = 300)
-ggsave(paste0(output_dir, "Figure_2_Sample_Selection_Flowchart.pdf"), p_flow, width = 9, height = 11)
+ggsave(paste0(output_dir, "Figure_2_Sample_Selection_Flowchart.png"), p_flow, width = 9.5, height = 9.5, dpi = 300)
+ggsave(paste0(output_dir, "Figure_2_Sample_Selection_Flowchart.pdf"), p_flow, width = 9.5, height = 9.5)
 
 #------------------------------------------------------------------------------
 # Figure 3: Prevalence of Undernutrition by Administrative Division in Bangladesh
