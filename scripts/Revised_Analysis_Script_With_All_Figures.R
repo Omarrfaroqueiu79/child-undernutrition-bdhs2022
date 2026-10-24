@@ -700,15 +700,17 @@ export_to_docx(Table_S4, "Table S4: Multicollinearity diagnostic statistics (Var
 cat("Step 9: Exporting all publication-ready figures (PNG & Vector PDF)...\n")
 
 #------------------------------------------------------------------------------
-# Figure 1: Historical Trends in Child Undernutrition in Bangladesh (1996–2022)
+# Figure 1: Historical Trends in Child Undernutrition in Bangladesh (1996-2022)
 #------------------------------------------------------------------------------
-cat("  -> Generating Figure 1: Historical Trends (1996–2022)...\n")
+cat("  -> Generating Figure 1: Historical Trends (1996-2022)...
+")
 
+# Official BDHS benchmark data (WHO Child Growth Standards)
 data_trend <- data.frame(
   Year = c("1996/97", "1999/00", "2004", "2007", "2011", "2014", "2017/18", "2022"),
-  Underweight = c(52.2, 43.3, 43.0, 41.0, 36.4, 32.6, 21.9, 22.7),
-  Stunted     = c(59.7, 44.7, 43.1, 43.2, 41.3, 36.1, 30.8, 23.6),
-  Wasted      = c(20.6, 10.3, 12.8, 17.4, 15.6, 14.3, 8.4, 11.9)
+  Underweight = c(52, 43, 43, 41, 36, 32, 22, 22),
+  Stunted     = c(60, 51, 51, 43, 41, 36, 31, 24),
+  Wasted      = c(21, 20, 15, 17, 16, 14,  8, 11)
 )
 
 data_trend_long <- data_trend %>%
@@ -716,15 +718,23 @@ data_trend_long <- data_trend %>%
     cols = c(Stunted, Underweight, Wasted),
     names_to = "Indicator",
     values_to = "Prevalence"
+  ) %>%
+  mutate(
+    # Separate labels at close points (2007 and 2022) to prevent overlap
+    vjust_val = case_when(
+      Indicator == "Stunted" ~ -1.1,
+      Indicator == "Underweight" & Year %in% c("2007", "2022") ~ 1.9,
+      Indicator == "Underweight" ~ -1.1,
+      Indicator == "Wasted" ~ -1.1
+    )
   )
 
 p_trend <- ggplot(data_trend_long, aes(x = Year, y = Prevalence, group = Indicator, color = Indicator)) +
   geom_line(linewidth = 1.3) +
-  geom_point(size = 3.2) +
+  geom_point(size = 3.5) +
   geom_text(
-    aes(label = sprintf("%.1f%%", Prevalence)),
-    vjust = -0.9,
-    size = 3.2,
+    aes(label = Prevalence, vjust = vjust_val),
+    size = 3.8,
     fontface = "bold",
     show.legend = FALSE
   ) +
@@ -732,25 +742,24 @@ p_trend <- ggplot(data_trend_long, aes(x = Year, y = Prevalence, group = Indicat
     values = c(
       "Stunted"     = "#D55E00",
       "Underweight" = "#7b61a8",
-      "Wasted"      = "#0072B2"
+      "Wasted"      = "#8db243"
     )
   ) +
   labs(
-    title = "Trends in Child Undernutrition in Bangladesh (1996–2022)",
     x = "Survey Year",
     y = "Prevalence (%)",
-    color = "Nutritional Indicator"
+    color = "Nutrition Indicator"
   ) +
   ylim(0, 70) +
   theme_classic() +
   theme(
-    axis.text.x = element_text(angle = 0, hjust = 0.5, size = 10, face = "bold"),
-    axis.text.y = element_text(size = 10),
-    axis.title  = element_text(size = 11, face = "bold"),
+    axis.text.x = element_text(angle = 0, hjust = 0.5, size = 11, face = "bold", color = "black"),
+    axis.text.y = element_text(size = 11, color = "black"),
+    axis.title  = element_text(size = 12, face = "bold"),
     legend.position = "top",
-    legend.title = element_text(size = 10, face = "bold"),
-    legend.text = element_text(size = 10),
-    plot.title  = element_text(hjust = 0.5, face = "bold", size = 12)
+    legend.title = element_text(size = 11, face = "bold"),
+    legend.text = element_text(size = 11),
+    plot.title  = element_text(hjust = 0.5, face = "bold", size = 13)
   )
 
 ggsave(paste0(output_dir, "Figure_1_Trend_Undernutrition_BDHS_LinePlot_n.png"), p_trend, width = 10, height = 6.2, dpi = 300)
@@ -792,9 +801,16 @@ ggsave(paste0(output_dir, "Figure_2_Sample_Selection_Flowchart.pdf"), p_flow, wi
 #------------------------------------------------------------------------------
 # Figure 3: Prevalence of Undernutrition by Administrative Division in Bangladesh
 #------------------------------------------------------------------------------
-cat("  -> Generating Figure 3: Regional Undernutrition Disparities across Divisions...\n")
+cat("  -> Generating Figure 3: Regional Undernutrition Disparities across Divisions...
+")
 
 region_summary <- data_clean %>%
+  mutate(
+    Region = factor(
+      Region,
+      levels = c("Barisal", "Chittagong", "Dhaka", "Khulna", "Rajshahi", "Rangpur", "Sylhet", "Mymensingh")
+    )
+  ) %>%
   group_by(Region) %>%
   summarise(
     Stunted     = sum(STUNTED * Weight) / sum(Weight) * 100,
@@ -809,12 +825,12 @@ region_summary <- data_clean %>%
   )
 
 p_region <- ggplot(region_summary, aes(x = Region, y = Prevalence, fill = Indicator)) +
-  geom_bar(stat = "identity", position = position_dodge(width = 0.85), width = 0.75) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
   geom_text(
-    aes(label = sprintf("%.1f%%", Prevalence)),
-    position = position_dodge(width = 0.85),
-    vjust = -0.5,
-    size = 3.0,
+    aes(y = Prevalence + 1.2, label = sprintf("%.2f", Prevalence)),
+    position = position_dodge(width = 0.9),
+    angle = 60,
+    size = 3.2,
     fontface = "bold"
   ) +
   scale_fill_manual(
@@ -825,21 +841,18 @@ p_region <- ggplot(region_summary, aes(x = Region, y = Prevalence, fill = Indica
     )
   ) +
   labs(
-    title = "Prevalence of Stunting, Wasting, and Underweight by Region in Bangladesh",
-    x = "Administrative Division",
-    y = "Weighted Prevalence (%)",
+    x = "Region/Division",
+    y = "Prevalence (%)",
     fill = "Nutritional Indicator"
   ) +
   ylim(0, 38) +
   theme_classic() +
   theme(
-    axis.text.x = element_text(angle = 0, hjust = 0.5, size = 10, face = "bold"),
-    axis.text.y = element_text(size = 10),
-    axis.title  = element_text(size = 11, face = "bold"),
     legend.position = "top",
-    legend.title = element_text(size = 10, face = "bold"),
-    legend.text = element_text(size = 10),
-    plot.title  = element_text(hjust = 0.5, face = "bold", size = 12)
+    legend.title = element_text(face = "bold", size = 11),
+    axis.text.x = element_text(size = 10, face = "bold", color = "black"),
+    axis.text.y = element_text(size = 10, color = "black"),
+    axis.title = element_text(size = 12, face = "bold")
   )
 
 ggsave(paste0(output_dir, "Figure_3_Prevalence by Region_BDHS_n.png"), p_region, width = 11, height = 6.5, dpi = 300)
