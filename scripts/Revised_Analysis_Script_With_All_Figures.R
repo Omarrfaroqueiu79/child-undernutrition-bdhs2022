@@ -525,7 +525,15 @@ extract_coef_table <- function(m_list) {
     ) %>%
     select(Variable, Category, Model_I, Model_II, Model_III)
   
-  # Insert Reference rows
+  # Insert Reference rows with model-specific inclusion logic
+  ref_vars_m1 <- c("Child age", "Birth order", "Mother's age", "Mother's education level",
+                   "Children ever born", "Currently pregnant", "Number of living children")
+  ref_vars_m2 <- c(ref_vars_m1, 
+                   "Wealth index", "Toilet facility", "Electricity in household",
+                   "Owns TV", "Owns refrigerator", "Owns Bicycle",
+                   "Floor material", "Wall material")
+  ref_vars_m3 <- c(ref_vars_m2, "Region/Division", "Type of residence")
+
   ref_rows <- data.frame(
     Variable = c("Child age", "Birth order", "Mother's age", "Mother's education level",
                  "Children ever born", "Currently pregnant", "Number of living children",
@@ -537,9 +545,13 @@ extract_coef_table <- function(m_list) {
                  "Poor (Ref)", "Unimproved (Ref)", "No (Ref)",
                  "No (Ref)", "No (Ref)", "No (Ref)",
                  "Unimproved (Ref)", "Unimproved (Ref)", "Barisal (Ref)", "Urban (Ref)"),
-    Model_I = "1.00", Model_II = "1.00", Model_III = "1.00",
     stringsAsFactors = FALSE
-  )
+  ) %>%
+    mutate(
+      Model_I   = ifelse(Variable %in% ref_vars_m1, "1.00", ""),
+      Model_II  = ifelse(Variable %in% ref_vars_m2, "1.00", ""),
+      Model_III = ifelse(Variable %in% ref_vars_m3, "1.00", "")
+    )
   
   # Combine and order logically
   full_tbl <- bind_rows(comb, ref_rows)
