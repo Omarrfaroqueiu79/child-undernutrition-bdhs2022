@@ -77,7 +77,8 @@ child-undernutrition-bdhs2022/
 │   └── Supplimentary File 1_STROBE_Checklist_Cross_Sectional.docx <- Completed STROBE checklist
 │
 └── manuscript/
-    ├── Manuscript_Marked.docx                   <- Marked revised manuscript with continuous line numbering
+    ├── Manuscript_Clean.docx                    <- Clean revised manuscript draft (publication-ready)
+    └── Manuscript_Marked.docx                   <- Marked revised manuscript with continuous line numbering
 ```
 
 ---
