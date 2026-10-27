@@ -1,5 +1,5 @@
 #==============================================================================
-# MASTER REVISED ANALYSIS SCRIPT FOR BMJ PUBLIC HEALTH REVISION
+#
 # Title: Multilevel Determinants of Under-Five Child Undernutrition in Bangladesh:
 #        A Nationally Representative Cross-Sectional Study from the BDHS 2022
 #==============================================================================
@@ -17,7 +17,7 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 
-# Configure relative paths automatically
+# Automatically detect repository root
 if (dir.exists('data')) {
   base_dir <- '.'
 } else if (dir.exists('../data')) {
@@ -26,29 +26,43 @@ if (dir.exists('data')) {
   base_dir <- '.'
 }
 
-output_dir <- file.path(base_dir, 'results/')
-figures_dir <- file.path(base_dir, 'figures/')
+output_dir <- paste0(file.path(base_dir, 'results'), '/')
+figures_dir <- paste0(file.path(base_dir, 'figures'), '/')
 if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 if (!dir.exists(figures_dir)) dir.create(figures_dir, recursive = TRUE)
 
-if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
+cat("Step 1: Extracting / Loading clean analytical data from BDHS 2022...\n")
 
-cat("Step 1: Extracting clean analytical data from BDHS 2022...\n")
-
-needed_cols <- c(
-  "CASEID", "V001", "V002", "V003", "V005",
-  "V025", "V024", "V106", "V113", "V116", "V119", "V122", "V121", "V127", "V128", "V129", "V123", "V190",
-  "V013", "V201", "V213", "V218",
-  paste0("HW1$", 1:6),
-  paste0("HW70$", 1:6),
-  paste0("HW71$", 1:6),
-  paste0("HW72$", 1:6),
-  paste0("BORD$0", 1:6),
-  paste0("B4$0", 1:6),
-  paste0("B5$0", 1:6)
+raw_file_candidates <- c(
+  "BDHS_cleaned_with_nutrition.sav",
+  file.path(base_dir, "BDHS_cleaned_with_nutrition.sav"),
+  file.path(base_dir, "..", "BDHS_cleaned_with_nutrition.sav"),
+  "C:/Users/M R Computer/OneDrive/Desktop/Abstract for Conference/BDHS_cleaned_with_nutrition.sav"
 )
+raw_file <- raw_file_candidates[file.exists(raw_file_candidates)][1]
 
-raw_sub <- read_sav("BDHS_cleaned_with_nutrition.sav", col_select = tidyselect::all_of(needed_cols))
+final_file_candidates <- c(
+  file.path(base_dir, "data", "BDHS_2022_child_undernutrition_final.sav"),
+  file.path(base_dir, "data", "BDHS_2022_child_undernutrition_final.csv"),
+  file.path("data", "BDHS_2022_child_undernutrition_final.sav")
+)
+final_file <- final_file_candidates[file.exists(final_file_candidates)][1]
+
+if (!is.na(raw_file) && file.exists(raw_file)) {
+  cat("Extracting from raw BDHS microdata:", raw_file, "...\n")
+  needed_cols <- c(
+    "CASEID", "V001", "V002", "V003", "V005",
+    "V025", "V024", "V106", "V113", "V116", "V119", "V122", "V121", "V127", "V128", "V129", "V123", "V190",
+    "V013", "V201", "V213", "V218",
+    paste0("HW1$", 1:6),
+    paste0("HW70$", 1:6),
+    paste0("HW71$", 1:6),
+    paste0("HW72$", 1:6),
+    paste0("BORD$0", 1:6),
+    paste0("B4$0", 1:6),
+    paste0("B5$0", 1:6)
+  )
+  raw_sub <- read_sav(raw_file, col_select = tidyselect::all_of(needed_cols))
 
 child_rows <- list()
 n_women <- nrow(raw_sub)
@@ -224,10 +238,51 @@ data_clean <- all_children %>%
     Residence = factor(ifelse(V025 == 1, "Urban", "Rural"), levels = c("Urban", "Rural"))
   )
 
-# Save datasets
-write_sav(data_clean, paste0(output_dir, "BDHS_2022_child_undernutrition_final.sav"))
-write.csv(data_clean, paste0(output_dir, "BDHS_2022_child_undernutrition_final.csv"), row.names = FALSE)
-cat("Final clean analytical dataset saved successfully!\n")
+  # Save datasets to results and data folder
+  if (!dir.exists(file.path(base_dir, "data"))) dir.create(file.path(base_dir, "data"), recursive = TRUE)
+  write_sav(data_clean, file.path(base_dir, "data/BDHS_2022_child_undernutrition_final.sav"))
+  write.csv(data_clean, file.path(base_dir, "data/BDHS_2022_child_undernutrition_final.csv"), row.names = FALSE)
+  write_sav(data_clean, paste0(output_dir, "BDHS_2022_child_undernutrition_final.sav"))
+  write.csv(data_clean, paste0(output_dir, "BDHS_2022_child_undernutrition_final.csv"), row.names = FALSE)
+  cat("Raw extraction completed and analytical datasets saved!\n")
+} else if (!is.na(final_file) && file.exists(final_file)) {
+  cat("Loading prepared analytical dataset from:", final_file, "...\n")
+  if (grepl("\\.sav$", final_file)) {
+    data_clean <- as_factor(read_sav(final_file))
+  } else {
+    data_clean <- read.csv(final_file)
+  }
+  
+  # Ensure exact factor levels and references
+  data_clean$Child_Age <- factor(data_clean$Child_Age, levels = c("0-11 months", "12-23 months", "24-35 months", "36-47 months", "48-59 months"))
+  data_clean$Child_Sex <- factor(data_clean$Child_Sex, levels = c("Male", "Female"))
+  data_clean$Birth_Order <- factor(data_clean$Birth_Order, levels = c("First", "Second/third", "Fourth or more"))
+  data_clean$Mother_Age <- factor(data_clean$Mother_Age, levels = c("15-19", "20-24", "25-29", "30-34", "35-49"))
+  data_clean$Mother_Education <- factor(data_clean$Mother_Education, levels = c("No education", "Primary", "Secondary", "Higher"))
+  data_clean$Children_Ever_Born <- factor(data_clean$Children_Ever_Born, levels = c("0-1", "2-3", "4+"))
+  data_clean$Currently_Pregnant <- factor(data_clean$Currently_Pregnant, levels = c("No", "Yes"))
+  data_clean$Living_Children <- factor(data_clean$Living_Children, levels = c("0-1", "2-3", "4+"))
+  data_clean$Wealth_Index <- factor(data_clean$Wealth_Index, levels = c("Poor", "Middle", "Rich"))
+  data_clean$Drinking_Water <- factor(data_clean$Drinking_Water, levels = c("Unimproved", "Improved"))
+  data_clean$Toilet_Facility <- factor(data_clean$Toilet_Facility, levels = c("Unimproved", "Improved"))
+  data_clean$Electricity <- factor(data_clean$Electricity, levels = c("No", "Yes"))
+  data_clean$Owns_TV <- factor(data_clean$Owns_TV, levels = c("No", "Yes"))
+  data_clean$Owns_Refrigerator <- factor(data_clean$Owns_Refrigerator, levels = c("No", "Yes"))
+  data_clean$Owns_Bicycle <- factor(data_clean$Owns_Bicycle, levels = c("No", "Yes"))
+  data_clean$Floor_Material <- factor(data_clean$Floor_Material, levels = c("Unimproved", "Improved"))
+  data_clean$Wall_Material <- factor(data_clean$Wall_Material, levels = c("Unimproved", "Improved"))
+  data_clean$Roof_Material <- factor(data_clean$Roof_Material, levels = c("Unimproved", "Improved"))
+  data_clean$Region <- factor(data_clean$Region, levels = c("Barisal", "Chittagong", "Dhaka", "Khulna", "Rajshahi", "Rangpur", "Sylhet", "Mymensingh"))
+  data_clean$Residence <- factor(data_clean$Residence, levels = c("Urban", "Rural"))
+  
+  data_clean$STUNTED <- as.numeric(as.character(data_clean$STUNTED))
+  data_clean$WASTED  <- as.numeric(as.character(data_clean$WASTED))
+  data_clean$UNDERWT <- as.numeric(as.character(data_clean$UNDERWT))
+  data_clean$Weight  <- as.numeric(as.character(data_clean$Weight))
+  cat("Analytical dataset loaded successfully (N = 4,087)!\n")
+} else {
+  stop("Error: No data file found (neither BDHS_cleaned_with_nutrition.sav nor data/BDHS_2022_child_undernutrition_final.sav).")
+}
 
 #==============================================================================
 # TABLE 1: Characteristics and Prevalence with n, %, 95% CIs
@@ -538,7 +593,15 @@ extract_coef_table <- function(m_list) {
     ) %>%
     select(Variable, Category, Model_I, Model_II, Model_III)
   
-  # Insert Reference rows
+  # Insert Reference rows with model-specific inclusion logic
+  ref_vars_m1 <- c("Child age", "Birth order", "Mother's age", "Mother's education level",
+                   "Children ever born", "Currently pregnant", "Number of living children")
+  ref_vars_m2 <- c(ref_vars_m1, 
+                   "Wealth index", "Toilet facility", "Electricity in household",
+                   "Owns TV", "Owns refrigerator", "Owns Bicycle",
+                   "Floor material", "Wall material")
+  ref_vars_m3 <- c(ref_vars_m2, "Region/Division", "Type of residence")
+
   ref_rows <- data.frame(
     Variable = c("Child age", "Birth order", "Mother's age", "Mother's education level",
                  "Children ever born", "Currently pregnant", "Number of living children",
@@ -550,9 +613,13 @@ extract_coef_table <- function(m_list) {
                  "Poor (Ref)", "Unimproved (Ref)", "No (Ref)",
                  "No (Ref)", "No (Ref)", "No (Ref)",
                  "Unimproved (Ref)", "Unimproved (Ref)", "Barisal (Ref)", "Urban (Ref)"),
-    Model_I = "1.00", Model_II = "1.00", Model_III = "1.00",
     stringsAsFactors = FALSE
-  )
+  ) %>%
+    mutate(
+      Model_I   = ifelse(Variable %in% ref_vars_m1, "1.00", ""),
+      Model_II  = ifelse(Variable %in% ref_vars_m2, "1.00", ""),
+      Model_III = ifelse(Variable %in% ref_vars_m3, "1.00", "")
+    )
   
   # Combine and order logically
   full_tbl <- bind_rows(comb, ref_rows)
@@ -663,16 +730,68 @@ writeData(wb, "Table S4_VIF", Table_S4)
 saveWorkbook(wb, paste0(output_dir, "BDHS2022_Revised_Tables_All.xlsx"), overwrite = TRUE)
 
 #==============================================================================
-# EXPORT TABLES TO INDIVIDUAL WORD (.DOCX) FILES
+# EXPORT TABLES TO INDIVIDUAL WORD (.DOCX) FILES WITH PUBLICATION BOOKTABS
 #==============================================================================
-cat("Step 8: Exporting individual Word tables with automatic color...\n")
+cat("Step 8: Exporting individual Word tables with publication Booktabs styling...\n")
 
-export_to_docx <- function(df, title_text, filename, footnote_text = NULL) {
+export_to_docx <- function(df, title_text, filename, is_landscape = FALSE, 
+                           col_widths = NULL, alignments = NULL, clean_headers = NULL, 
+                           footnote_text = NULL) {
+  # Set section properties (landscape for wide tables, portrait for vertical)
+  if (is_landscape) {
+    ps <- prop_section(
+      page_size = page_size(orient = "landscape", width = 11.0, height = 8.5),
+      page_margins = page_mar(top = 0.75, bottom = 0.75, left = 0.75, right = 0.75)
+    )
+  } else {
+    ps <- prop_section(
+      page_size = page_size(orient = "portrait", width = 8.5, height = 11.0),
+      page_margins = page_mar(top = 0.80, bottom = 0.80, left = 0.80, right = 0.80)
+    )
+  }
+  
   ft <- flextable(df)
-  ft <- theme_booktabs(ft)
-  ft <- autofit(ft)
-  ft <- color(ft, color = "black", part = "all") # automatic black text
+  if (!is.null(clean_headers)) {
+    ft <- set_header_labels(ft, values = as.list(setNames(clean_headers, names(df))))
+  }
+  
+  # Classic 3-line Booktabs rules
+  ft <- border_remove(ft)
+  ft <- hline_top(ft, border = fp_border(color = "black", width = 1.5))
+  ft <- hline(ft, part = "header", border = fp_border(color = "black", width = 0.75))
+  ft <- hline_bottom(ft, border = fp_border(color = "black", width = 1.5))
+  
+  # Typography and background
+  ft <- bg(ft, bg = "#FFFFFF", part = "all")
+  ft <- color(ft, color = "black", part = "all")
   ft <- bold(ft, part = "header")
+  ft <- font(ft, fontname = "Cambria", part = "all")
+  ft <- fontsize(ft, size = 9.5, part = "body")
+  ft <- fontsize(ft, size = 10, part = "header")
+  ft <- padding(ft, padding.top = 4, padding.bottom = 4, padding.left = 5, padding.right = 5, part = "all")
+  
+  # Bold random effect header row if present
+  if ("Variable" %in% names(df)) {
+    re_idx <- which(df$Variable == "Random-Effect & Fit Statistics")
+    if (length(re_idx) > 0) {
+      ft <- bold(ft, i = re_idx, part = "body")
+    }
+  }
+  
+  # Explicit column widths
+  if (!is.null(col_widths)) {
+    for (i in seq_along(col_widths)) {
+      ft <- width(ft, j = i, width = col_widths[i])
+    }
+  }
+  
+  # Alignments
+  if (!is.null(alignments)) {
+    for (i in seq_along(alignments)) {
+      al <- if (alignments[i] == "L") "left" else if (alignments[i] == "R") "right" else "center"
+      ft <- align(ft, j = i, align = al, part = "body")
+    }
+  }
   
   doc <- read_docx() %>%
     body_add_par(title_text, style = "heading 1") %>%
@@ -685,15 +804,56 @@ export_to_docx <- function(df, title_text, filename, footnote_text = NULL) {
       body_add_par(footnote_text, style = "Normal")
   }
   
-  print(doc, target = paste0(output_dir, filename))
+  doc <- body_set_default_section(doc, ps)
+  print(doc, target = file.path(output_dir, filename))
 }
 
-export_to_docx(Table_1, "Table 1: Characteristics of the study population and prevalence of child undernutrition", "Table_1_Prevalence.docx")
-export_to_docx(Table_2, "Table 2: Bivariate association (Chi-square) between background characteristics and nutritional outcomes", "Table_2_Bivariate.docx")
-export_to_docx(Table_3, "Table 3: Adjusted odds ratios from multilevel logistic regression models for determinants of child stunting, wasting, and underweight in Bangladesh (Model III)", "Table_3_Multilevel_Model_III.docx")
-export_to_docx(Table_S1, "Table S1: Parameter estimates of the multilevel logistic regression models for stunting", "Table_S1_Stunting_Multilevel.docx")
-export_to_docx(Table_S2, "Table S2: Parameter estimates of the multilevel logistic regression models for wasting", "Table_S2_Wasting_Multilevel.docx")
-export_to_docx(Table_S3, "Table S3: Parameter estimates of the multilevel logistic regression models for underweight", "Table_S3_Underweight_Multilevel.docx")
+# Table 1: Landscape (7 columns, total = 9.5 in)
+t1_headers <- c("Variable", "Category", "Sample (n)", "Weighted %", "Stunting % (95% CI)", "Wasting % (95% CI)", "Underweight % (95% CI)")
+t1_widths  <- c(1.65, 1.35, 0.80, 0.80, 1.60, 1.60, 1.70)
+t1_align   <- c("L", "L", "R", "R", "C", "C", "C")
+export_to_docx(Table_1, "Table 1: Characteristics of the study population and prevalence of child undernutrition", 
+               "Table_1_Prevalence.docx", is_landscape = TRUE, col_widths = t1_widths, alignments = t1_align, clean_headers = t1_headers)
+
+# Table 2: Landscape (10 columns, total = 8.95 in)
+t2_headers <- c("Variable", "Stunting χ²", "df", "p-value", "Wasting χ²", "df", "p-value", "Underweight χ²", "df", "p-value")
+t2_widths  <- c(2.20, 0.85, 0.45, 0.90, 0.85, 0.45, 0.90, 1.00, 0.45, 0.90)
+t2_align   <- c("L", "C", "C", "C", "C", "C", "C", "C", "C", "C")
+export_to_docx(Table_2, "Table 2: Bivariate association (Chi-square) between background characteristics and nutritional outcomes", 
+               "Table_2_Bivariate.docx", is_landscape = TRUE, col_widths = t2_widths, alignments = t2_align, clean_headers = t2_headers)
+
+# Table 3: Portrait (5 columns, total = 6.90 in)
+t3_headers <- c("Variable", "Category", "Stunting AOR (95% CI)", "Wasting AOR (95% CI)", "Underweight AOR (95% CI)")
+t3_widths  <- c(1.50, 1.35, 1.35, 1.35, 1.35)
+t3_align   <- c("L", "L", "C", "C", "C")
+export_to_docx(Table_3, "Table 3: Adjusted odds ratios from multilevel logistic regression models for determinants of child stunting, wasting, and underweight in Bangladesh (Model III)", 
+               "Table_3_Multilevel_Model_III.docx", is_landscape = FALSE, col_widths = t3_widths, alignments = t3_align, clean_headers = t3_headers)
+
+# Tables S1-S3: Portrait (5 columns, total = 6.80 in)
+ts_headers <- c("Variable", "Category", "Model I", "Model II", "Model III")
+ts_widths  <- c(1.50, 1.40, 1.30, 1.30, 1.30)
+ts_align   <- c("L", "L", "C", "C", "C")
+export_to_docx(Table_S1, "Table S1: Parameter estimates of the multilevel logistic regression models for stunting", 
+               "Table_S1_Stunting_Multilevel.docx", is_landscape = FALSE, col_widths = ts_widths, alignments = ts_align, clean_headers = ts_headers)
+export_to_docx(Table_S2, "Table S2: Parameter estimates of the multilevel logistic regression models for wasting", 
+               "Table_S2_Wasting_Multilevel.docx", is_landscape = FALSE, col_widths = ts_widths, alignments = ts_align, clean_headers = ts_headers)
+export_to_docx(Table_S3, "Table S3: Parameter estimates of the multilevel logistic regression models for underweight", 
+               "Table_S3_Underweight_Multilevel.docx", is_landscape = FALSE, col_widths = ts_widths, alignments = ts_align, clean_headers = ts_headers)
+
+# Table S4: Clean variable names and Portrait (4 columns, total = 6.80 in)
+vif_labels <- c(
+  "Child_Age" = "Child age", "Birth_Order" = "Birth order", "Mother_Age" = "Mother's age",
+  "Mother_Education" = "Mother's education level", "Children_Ever_Born" = "Children ever born",
+  "Currently_Pregnant" = "Currently pregnant", "Living_Children" = "Number of living children",
+  "Wealth_Index" = "Wealth index", "Toilet_Facility" = "Toilet facility",
+  "Electricity" = "Electricity in household", "Owns_TV" = "Owns TV",
+  "Owns_Refrigerator" = "Owns refrigerator", "Owns_Bicycle" = "Owns Bicycle",
+  "Floor_Material" = "Floor material", "Wall_Material" = "Wall material",
+  "Region" = "Region/Division", "Residence" = "Type of residence"
+)
+Table_S4_clean <- Table_S4
+Table_S4_clean$Variable <- ifelse(Table_S4_clean$Variable %in% names(vif_labels), 
+                                  vif_labels[Table_S4_clean$Variable], Table_S4_clean$Variable)
 
 s4_note <- paste0(
   "Note: GVIF = Generalized Variance Inflation Factor; df = degrees of freedom; GVIF_Adjusted = GVIF^(1/(2*df)). ",
@@ -705,42 +865,244 @@ s4_note <- paste0(
   "substantive conceptual grounds to distinguish cumulative biological childbearing history from active household child dependency; ",
   "sensitivity analysis omitting living children reduced the GVIF for children ever born to 5.466 without altering estimates for maternal education, wealth, child age, or community context."
 )
-export_to_docx(Table_S4, "Table S4: Multicollinearity diagnostic statistics (Variance Inflation Factors)", "Table_S4_Multicollinearity_VIF.docx", footnote_text = s4_note)
+ts4_headers <- c("Variable", "GVIF", "df", "Adjusted GVIF")
+ts4_widths  <- c(2.50, 1.40, 1.40, 1.50)
+ts4_align   <- c("L", "C", "C", "C")
+export_to_docx(Table_S4_clean, "Table S4: Multicollinearity diagnostic statistics (Variance Inflation Factors)", 
+               "Table_S4_Multicollinearity_VIF.docx", is_landscape = FALSE, col_widths = ts4_widths, alignments = ts4_align, 
+               clean_headers = ts4_headers, footnote_text = s4_note)
 
 #==============================================================================
-# GENERATE AND EXPORT PUBLICATION FIGURES
+# GENERATE AND EXPORT ALL THREE FIGURES (Figure 1, Figure 2, Figure 3)
 #==============================================================================
-cat("Step 9: Exporting publication figures...\n")
+cat("Step 9: Exporting all publication-ready figures (PNG & Vector PDF)...\n")
+
+#------------------------------------------------------------------------------
+# Figure 1: Historical Trends in Child Undernutrition in Bangladesh (1996-2022)
+#------------------------------------------------------------------------------
+cat("  -> Generating Figure 1: Historical Trends (1996-2022)...
+")
+
+# Official BDHS benchmark data (WHO Child Growth Standards)
+data_trend <- data.frame(
+  Year = c("1996/97", "1999/00", "2004", "2007", "2011", "2014", "2017/18", "2022"),
+  Underweight = c(52, 43, 43, 41, 36, 32, 22, 22),
+  Stunted     = c(60, 51, 51, 43, 41, 36, 31, 24),
+  Wasted      = c(21, 20, 15, 17, 16, 14,  8, 11)
+)
+
+data_trend_long <- data_trend %>%
+  pivot_longer(
+    cols = c(Stunted, Underweight, Wasted),
+    names_to = "Indicator",
+    values_to = "Prevalence"
+  ) %>%
+  mutate(
+    # Separate labels at close points (2007 and 2022) to prevent overlap
+    vjust_val = case_when(
+      Indicator == "Stunted" ~ -1.1,
+      Indicator == "Underweight" & Year %in% c("2007", "2022") ~ 1.9,
+      Indicator == "Underweight" ~ -1.1,
+      Indicator == "Wasted" ~ -1.1
+    )
+  )
+
+p_trend <- ggplot(data_trend_long, aes(x = Year, y = Prevalence, group = Indicator, color = Indicator)) +
+  geom_line(linewidth = 1.3) +
+  geom_point(size = 3.5) +
+  geom_text(
+    aes(label = Prevalence, vjust = vjust_val),
+    size = 3.8,
+    fontface = "bold",
+    show.legend = FALSE
+  ) +
+  scale_color_manual(
+    values = c(
+      "Stunted"     = "#D55E00",
+      "Underweight" = "#7b61a8",
+      "Wasted"      = "#8db243"
+    )
+  ) +
+  labs(
+    x = "Survey Year",
+    y = "Prevalence (%)",
+    color = "Nutrition Indicator"
+  ) +
+  ylim(0, 70) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(angle = 0, hjust = 0.5, size = 11, face = "bold", color = "black"),
+    axis.text.y = element_text(size = 11, color = "black"),
+    axis.title  = element_text(size = 12, face = "bold"),
+    legend.position = "top",
+    legend.title = element_text(size = 11, face = "bold"),
+    legend.text = element_text(size = 11),
+    plot.title  = element_text(hjust = 0.5, face = "bold", size = 13)
+  )
+
+ggsave(file.path(figures_dir, "Figure_1_Trend_Undernutrition_BDHS_LinePlot_n.png"), p_trend, width = 10, height = 6.2, dpi = 300)
+ggsave(file.path(figures_dir, "Figure_1_Trend_Undernutrition_BDHS_LinePlot_n.pdf"), p_trend, width = 10, height = 6.2)
+
+#------------------------------------------------------------------------------
+# Figure 2: STROBE Participant Selection Flowchart (N = 4,087)
+#------------------------------------------------------------------------------
+cat("  -> Generating Figure 2: STROBE Sample Selection Flowchart...
+")
 
 p_flow <- ggplot() +
-  annotate("rect", xmin = 0.2, xmax = 0.8, ymin = 0.88, ymax = 0.98, fill = "white", color = "black", linewidth = 0.8) +
-  annotate("text", x = 0.5, y = 0.93, label = "675 Enumeration Areas (EAs) Selected\n(Two-stage stratified cluster sampling frame)", size = 4.2, fontface = "bold", hjust = 0.5) +
-  annotate("segment", x = 0.5, xend = 0.5, y = 0.88, yend = 0.83, arrow = arrow(length = unit(0.25, "cm"), type = "closed"), linewidth = 0.8) +
-  annotate("rect", xmin = 0.2, xmax = 0.8, ymin = 0.73, ymax = 0.83, fill = "white", color = "black", linewidth = 0.8) +
-  annotate("text", x = 0.5, y = 0.78, label = "674 EAs Successfully Surveyed\n(237 Urban EAs and 437 Rural EAs)\n*1 rural EA omitted due to flooding", size = 4.0, hjust = 0.5) +
-  annotate("segment", x = 0.5, xend = 0.5, y = 0.73, yend = 0.68, arrow = arrow(length = unit(0.25, "cm"), type = "closed"), linewidth = 0.8) +
-  annotate("rect", xmin = 0.2, xmax = 0.8, ymin = 0.58, ymax = 0.68, fill = "white", color = "black", linewidth = 0.8) +
-  annotate("text", x = 0.5, y = 0.63, label = "30,330 Households Sampled (25,481 Interviewed)\n30,078 Ever-Married Women Aged 15–49 Years Interviewed", size = 4.0, hjust = 0.5) +
-  annotate("segment", x = 0.5, xend = 0.5, y = 0.58, yend = 0.53, arrow = arrow(length = unit(0.25, "cm"), type = "closed"), linewidth = 0.8) +
-  annotate("rect", xmin = 0.2, xmax = 0.8, ymin = 0.43, ymax = 0.53, fill = "white", color = "black", linewidth = 0.8) +
-  annotate("text", x = 0.5, y = 0.48, label = "8,784 Under-Five Children Born\n(Live births in the 5 years preceding the survey)", size = 4.2, fontface = "bold", hjust = 0.5) +
-  annotate("segment", x = 0.5, xend = 0.5, y = 0.43, yend = 0.35, arrow = arrow(length = unit(0.25, "cm"), type = "closed"), linewidth = 0.8) +
-  annotate("segment", x = 0.5, xend = 0.85, y = 0.39, linewidth = 0.8) +
-  annotate("segment", x = 0.85, xend = 0.85, y = 0.39, yend = 0.35, arrow = arrow(length = unit(0.25, "cm"), type = "closed"), linewidth = 0.8) +
-  annotate("rect", xmin = 0.65, xmax = 0.98, ymin = 0.23, ymax = 0.35, fill = "#f9f9f9", color = "black", linetype = "dashed", linewidth = 0.8) +
-  annotate("text", x = 0.815, y = 0.29, label = "Excluded (n = 4,697):\n• Deceased children: n = 276\n• Missing/not measured anthropometry\n  (non-subsampled/absent): n = 4,421\n• Flagged/implausible Z-scores: n = 0", size = 3.6, hjust = 0.5) +
-  annotate("rect", xmin = 0.15, xmax = 0.60, ymin = 0.23, ymax = 0.35, fill = "white", color = "black", linewidth = 0.9) +
-  annotate("text", x = 0.375, y = 0.29, label = "Final Analytical Sample: N = 4,087\nChildren aged 0–59 months with complete\nanthropometric & covariate information\n(Nested in 3,474 households across 670 clusters)", size = 3.9, fontface = "bold", hjust = 0.5) +
-  annotate("segment", x = 0.375, xend = 0.375, y = 0.23, yend = 0.17, arrow = arrow(length = unit(0.25, "cm"), type = "closed"), linewidth = 0.8) +
-  annotate("rect", xmin = 0.05, xmax = 0.95, ymin = 0.03, ymax = 0.17, fill = "#f4f6f9", color = "black", linewidth = 0.8) +
-  annotate("text", x = 0.5, y = 0.10, label = "Anthropometric Nutritional Outcomes Evaluated:\n• Stunting: 966 Stunted (23.64%), 3,121 Normal (76.36%)\n• Wasting: 487 Wasted (11.92%), 3,600 Normal (88.08%)\n• Underweight: 928 Underweight (22.71%), 3,159 Normal (77.29%)", size = 4.0, hjust = 0.5) +
-  theme_void() +
-  coord_cartesian(xlim = c(0.02, 1.0), ylim = c(0.01, 1.0))
+  # Box 1: EAs Selected
+  annotate("rect", xmin = 0.16, xmax = 0.84, ymin = 0.865, ymax = 0.985, 
+           fill = "#f8fafc", color = "#1e293b", linewidth = 0.9) +
+  annotate("text", x = 0.50, y = 0.942, label = "675 Enumeration Areas (EAs) Selected", 
+           size = 5.0, fontface = "bold", color = "#0f172a", hjust = 0.5) +
+  annotate("text", x = 0.50, y = 0.898, label = "Two-stage stratified cluster sampling frame across 8 administrative divisions", 
+           size = 4.0, color = "#475569", hjust = 0.5) +
+  annotate("segment", x = 0.50, xend = 0.50, y = 0.865, yend = 0.795, 
+           arrow = arrow(length = unit(0.28, "cm"), type = "closed"), linewidth = 0.9, color = "#1e293b") +
 
-ggsave(paste0(output_dir, "Figure_2_Sample_Selection_Flowchart.png"), p_flow, width = 9, height = 11, dpi = 300)
-ggsave(paste0(output_dir, "Figure_2_Sample_Selection_Flowchart.pdf"), p_flow, width = 9, height = 11)
+  # Box 2: EAs Surveyed
+  annotate("rect", xmin = 0.16, xmax = 0.84, ymin = 0.675, ymax = 0.795, 
+           fill = "#f8fafc", color = "#1e293b", linewidth = 0.9) +
+  annotate("text", x = 0.50, y = 0.752, label = "674 EAs Successfully Surveyed", 
+           size = 5.0, fontface = "bold", color = "#0f172a", hjust = 0.5) +
+  annotate("text", x = 0.50, y = 0.708, label = "237 Urban EAs and 437 Rural EAs (1 rural EA omitted due to flooding)", 
+           size = 4.0, color = "#475569", hjust = 0.5) +
+  annotate("segment", x = 0.50, xend = 0.50, y = 0.675, yend = 0.605, 
+           arrow = arrow(length = unit(0.28, "cm"), type = "closed"), linewidth = 0.9, color = "#1e293b") +
+
+  # Box 3: Households and Women Interviewed
+  annotate("rect", xmin = 0.16, xmax = 0.84, ymin = 0.485, ymax = 0.605, 
+           fill = "#f8fafc", color = "#1e293b", linewidth = 0.9) +
+  annotate("text", x = 0.50, y = 0.562, label = "30,330 Households Sampled (25,481 Occupied Households Interviewed)", 
+           size = 4.9, fontface = "bold", color = "#0f172a", hjust = 0.5) +
+  annotate("text", x = 0.50, y = 0.518, label = "30,078 Ever-Married Women Aged 15–49 Years Successfully Interviewed", 
+           size = 4.0, color = "#475569", hjust = 0.5) +
+  annotate("segment", x = 0.50, xend = 0.50, y = 0.485, yend = 0.415, 
+           arrow = arrow(length = unit(0.28, "cm"), type = "closed"), linewidth = 0.9, color = "#1e293b") +
+
+  # Box 4: Under-Five Children Born
+  annotate("rect", xmin = 0.16, xmax = 0.84, ymin = 0.295, ymax = 0.415, 
+           fill = "#f8fafc", color = "#1e293b", linewidth = 0.9) +
+  annotate("text", x = 0.50, y = 0.372, label = "8,784 Under-Five Children Born", 
+           size = 5.1, fontface = "bold", color = "#0f172a", hjust = 0.5) +
+  annotate("text", x = 0.50, y = 0.328, label = "Live births to interviewed women in the 5 years preceding the survey", 
+           size = 4.0, color = "#475569", hjust = 0.5) +
+
+  # T-junction branching: perfectly centered to both boxes
+  annotate("segment", x = 0.50, xend = 0.50, y = 0.295, yend = 0.235, linewidth = 0.9, color = "#1e293b") +
+  annotate("segment", x = 0.28, xend = 0.745, y = 0.235, yend = 0.235, linewidth = 0.9, color = "#1e293b") +
+  annotate("segment", x = 0.28, xend = 0.28, y = 0.235, yend = 0.185, 
+           arrow = arrow(length = unit(0.28, "cm"), type = "closed"), linewidth = 0.9, color = "#1d4ed8") +
+  annotate("segment", x = 0.745, xend = 0.745, y = 0.235, yend = 0.185, 
+           arrow = arrow(length = unit(0.28, "cm"), type = "closed"), linewidth = 0.9, color = "#b91c1c") +
+
+  # Left Box: Final Analytical Sample (Target Population of Study)
+  annotate("rect", xmin = 0.05, xmax = 0.51, ymin = 0.015, ymax = 0.185, 
+           fill = "#eff6ff", color = "#1d4ed8", linewidth = 1.3) +
+  annotate("text", x = 0.28, y = 0.148, label = "Final Analytical Sample: N = 4,087", 
+           size = 5.0, fontface = "bold", color = "#1e40af", hjust = 0.5) +
+  annotate("text", x = 0.28, y = 0.102, label = "Children aged 0–59 months with complete
+anthropometric & covariate information", 
+           size = 4.0, fontface = "bold", color = "#1e3a8a", hjust = 0.5) +
+  annotate("text", x = 0.28, y = 0.045, label = "(Nested within 3,474 households across 670 clusters)", 
+           size = 3.9, color = "#334155", hjust = 0.5) +
+
+  # Right Box: Excluded Children
+  annotate("rect", xmin = 0.54, xmax = 0.95, ymin = 0.015, ymax = 0.185, 
+           fill = "#fef2f2", color = "#b91c1c", linetype = "dashed", linewidth = 1.0) +
+  annotate("text", x = 0.745, y = 0.148, label = "Excluded (n = 4,697):", 
+           size = 4.8, fontface = "bold", color = "#991b1b", hjust = 0.5) +
+  annotate("text", x = 0.565, y = 0.108, label = "• Deceased children: n = 276", 
+           size = 3.9, color = "#334155", hjust = 0) +
+  annotate("text", x = 0.565, y = 0.068, label = "• Missing / unmeasured anthropometry: n = 4,421", 
+           size = 3.9, color = "#334155", hjust = 0) +
+  annotate("text", x = 0.565, y = 0.038, label = "• Flagged / implausible Z-scores: n = 0", 
+           size = 3.9, color = "#334155", hjust = 0) +
+
+  theme_void() +
+  coord_cartesian(xlim = c(0.02, 0.98), ylim = c(0.00, 1.00))
+
+ggsave(file.path(figures_dir, "Figure_2_Sample_Selection_Flowchart.png"), p_flow, width = 10.5, height = 9.0, dpi = 300)
+ggsave(file.path(figures_dir, "Figure_2_Sample_Selection_Flowchart.pdf"), p_flow, width = 10.5, height = 9.0)
+
+#------------------------------------------------------------------------------
+# Figure 3: Prevalence of Undernutrition by Administrative Division in Bangladesh
+#------------------------------------------------------------------------------
+cat("  -> Generating Figure 3: Regional Undernutrition Disparities across Divisions...
+")
+
+region_summary <- data_clean %>%
+  mutate(
+    Region = factor(
+      Region,
+      levels = c("Barisal", "Chittagong", "Dhaka", "Khulna", "Rajshahi", "Rangpur", "Sylhet", "Mymensingh")
+    )
+  ) %>%
+  group_by(Region) %>%
+  summarise(
+    Stunted     = sum(STUNTED * Weight) / sum(Weight) * 100,
+    Underweight = sum(UNDERWT * Weight) / sum(Weight) * 100,
+    Wasted      = sum(WASTED  * Weight) / sum(Weight) * 100,
+    .groups = "drop"
+  ) %>%
+  pivot_longer(
+    cols = c(Stunted, Underweight, Wasted),
+    names_to = "Indicator",
+    values_to = "Prevalence"
+  )
+
+p_region <- ggplot(region_summary, aes(x = Region, y = Prevalence, fill = Indicator)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
+  geom_text(
+    aes(y = Prevalence + 1.2, label = sprintf("%.2f", Prevalence)),
+    position = position_dodge(width = 0.9),
+    angle = 60,
+    size = 3.2,
+    fontface = "bold"
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Stunted"     = "#D55E00",
+      "Underweight" = "#009E73",
+      "Wasted"      = "#0072B2"
+    )
+  ) +
+  labs(
+    x = "Region/Division",
+    y = "Prevalence (%)",
+    fill = "Nutritional Indicator"
+  ) +
+  ylim(0, 38) +
+  theme_classic() +
+  theme(
+    legend.position = "top",
+    legend.title = element_text(face = "bold", size = 11),
+    axis.text.x = element_text(size = 10, face = "bold", color = "black"),
+    axis.text.y = element_text(size = 10, color = "black"),
+    axis.title = element_text(size = 12, face = "bold")
+  )
+
+ggsave(file.path(figures_dir, "Figure_3_Prevalence by Region_BDHS_n.png"), p_region, width = 11, height = 6.5, dpi = 300)
+ggsave(file.path(figures_dir, "Figure_3_Prevalence by Region_BDHS_n.pdf"), p_region, width = 11, height = 6.5)
+
+
+#==============================================================================
+# XML POST-PROCESSING VIA PYTHON (BOOKTABS CELL MARGINS & STRICT XML SIZING)
+#==============================================================================
+py_script <- file.path(base_dir, "scripts/format_tables_booktabs.py")
+if (file.exists(py_script)) {
+  cat("Step 10: Applying XML-level Booktabs post-processing to Word tables...\n")
+  tryCatch({
+    res <- system2("python", args = c(shQuote(py_script), shQuote(output_dir)), stdout = TRUE, stderr = TRUE)
+    cat(paste(res, collapse = "\n"), "\n")
+  }, error = function(e) {
+    cat("Note: Python post-processor skipped (python not available or error occurred).\n")
+  })
+}
 
 cat("\n==============================================================================\n")
 cat("SUCCESS! All analyses completed, datasets saved, and tables/figures exported to:\n")
-cat(output_dir, "\n")
+cat("Tables & Excel:", output_dir, "\n")
+cat("Figures (PNG & PDF):", figures_dir, "\n")
 cat("==============================================================================\n")
+

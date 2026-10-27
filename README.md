@@ -21,16 +21,16 @@ This repository provides the replication code, clean analytical dataset, and com
 ## 🎯 Key Empirical Findings
 
 1. **National Burden:**
-   - **Stunting (Chronic):** Weighted prevalence = **23.28%** (95% CI: 21.98–24.63)
-   - **Wasting (Acute):** Weighted prevalence = **11.16%** (95% CI: 10.19–12.19)
-   - **Underweight (Composite):** Weighted prevalence = **22.19%** (95% CI: 20.91–23.51)
+   - **Stunting (Chronic):** Weighted prevalence = **23.28%** (95% CI: 21.98-24.57)
+   - **Wasting (Acute):** Weighted prevalence = **11.16%** (95% CI: 10.20-12.13)
+   - **Underweight (Composite):** Weighted prevalence = **22.19%** (95% CI: 20.92-23.46)
 
 2. **The Weaning Vulnerability Window:**
    - Incorporating child age resolved a critical gap in earlier models. Stunting odds more than doubled during the complementary feeding transition (12–23 months: **AOR = 2.38**; 95% CI: 1.85–3.06; 24–35 months: **AOR = 2.25**; 95% CI: 1.76–2.89) relative to infants under 12 months. In contrast, child age was not associated with acute wasting.
 
 3. **Maternal Education & Household Socioeconomic Protection:**
    - Maternal higher education was the single strongest protective determinant against both stunting (**AOR = 0.38**; 95% CI: 0.26–0.56) and underweight (**AOR = 0.37**; 95% CI: 0.25–0.53).
-   - Household wealth significantly protected against stunting (Rich **AOR = 0.64**) and underweight (Rich **AOR = 0.66**). Refrigerator ownership was independently protective against underweight (**AOR = 0.79**), indicating the role of domestic food preservation.
+   - Household wealth significantly protected against stunting (Rich **AOR = 0.64**) and underweight (Rich **AOR = 0.66**). Refrigerator ownership was independently protective against underweight (**AOR = 0.75**; 95% CI: 0.62-0.92, p = 0.005), and improved toilet facilities significantly protected against stunting (**AOR = 0.82**; 95% CI: 0.67-0.99, p = 0.041), indicating the role of domestic food preservation.
 
 4. **Community Contextual Clustering:**
    - Two-level hierarchical modeling demonstrated significant community clustering across 670 Primary Sampling Units for stunting (**ICC = 1.19%, MOR = 1.21, LRT $\chi^2 = 16.36, p < 0.001$**) and underweight (**ICC = 1.09%, MOR = 1.20, LRT $\chi^2 = 10.07, p < 0.001$**).
@@ -53,7 +53,9 @@ child-undernutrition-bdhs2022/
 │   └── codebook.md                              <- Detailed codebook for all 56 variables
 │
 ├── scripts/
-│   └── Revised_Analysis_Script.R               <- Full R replication script (Table 1, Table 2, Table 3, S1-S4)
+│   ├── Revised_Analysis_Script.R               <- Master R replication script (end-to-end models, tables, and figures)
+│   ├── Revised_Analysis_Script_With_All_Figures.R <- Full pipeline script with figures & diagnostics
+│   └── format_tables_booktabs.py               <- Standalone Python Booktabs XML table post-processor
 │
 ├── results/
 │   ├── BDHS2022_Revised_Tables_All.xlsx         <- Master workbook with all descriptive and multilevel tables
@@ -75,7 +77,8 @@ child-undernutrition-bdhs2022/
 │   └── Supplimentary File 1_STROBE_Checklist_Cross_Sectional.docx <- Completed STROBE checklist
 │
 └── manuscript/
-    └── Revised_Manuscript_Clean.docx            <- Clean revised manuscript draft
+    ├── Revised_Manuscript_Clean.docx            <- Clean revised manuscript draft (publication-ready)
+    └── Revised_Manuscript_Marked.docx           <- Track-changes marked manuscript showing all revisions
 ```
 
 ---
